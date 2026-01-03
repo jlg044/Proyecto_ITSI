@@ -1,63 +1,141 @@
+version: '3.8'
+
 services:
-  # Servicio de la API Web (Flask)
-  web:
-    build: ./web
-    restart: always
-    container_name: task-manager-web
-    ports:
-      - "5001:5000"
-    volumes:
-      - ./web:/app # Montaje para desarrollo en vivo
-    environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/taskdb
-      - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
-    depends_on:
-      - db
-      - mq
+  # ==================================
+  # INFRAESTRUCTURA BASE
+  # ==================================
 
-  # Servicio del Trabajador Asíncrono (Consumer)
-  worker:
-    build: ./worker
-    restart: always
-    container_name: task-manager-worker
-    volumes:
-      - ./worker:/app # Montaje para desarrollo en vivo
-    environment:
-      - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
-    depends_on:
-      - mq
-
-  # Servicio de la Base de Datos
+  # PostgreSQL Database
   db:
     image: postgres:14-alpine
     container_name: task-manager-db
+    restart: unless-stopped
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=taskdb
+      - POSTGRES_USER=${POSTGRES_USER:-user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-taskdb}
     ports:
-      - "5433:5432" # Exponer para depuración externa
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Servicio del Bróker de Mensajes
-  mq:
+  # RabbitMQ Message Broker
+  rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: task-manager-mq
+    container_name: task-manager-rabbitmq
+    restart: unless-stopped
     ports:
-      - "5672:5672" # Puerto para la comunicación AMQP
-      - "15672:15672" # Puerto para la interfaz de gestión web
+      - "5672:5672"      # AMQP port
+      - "15672:15672"    # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
-  # Servicio del Notificador
+  # N8N Workflow Automation
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: task-manager-n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    env_file:
+      - ../.env
+    environment:
+      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-false}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-taskdb}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-user}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - WEBHOOK_TUNNEL_URL=http://localhost:${N8N_PORT:-5678}/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ==================================
+  # APLICACIÓN
+  # ==================================
+
+  # API Web Service (Flask)
+  web:
+    build: ./web
+    container_name: task-manager-web
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./web:/app
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-taskdb}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_DEBUG=${FLASK_DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Worker Service (Async Consumer)
+  worker:
+    build: ./worker
+    container_name: task-manager-worker
+    restart: unless-stopped
+    volumes:
+      - ./worker:/app
+    environment:
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+    depends_on:
+      - rabbitmq
+
+  # Notifier Service
   notifier:
     build: ./notifier
-    restart: always
     container_name: task-manager-notifier
+    restart: unless-stopped
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
-      - WEBHOOK_URL=https://webhook.site/e56b4969-f5cf-49b9-9ed3-fa6ebf6de582
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
+      - GMAIL_USER=${GMAIL_USER:-}
+      - GMAIL_PASSWORD=${GMAIL_PASSWORD:-}
     depends_on:
-      - mq
+      - rabbitmq
 
+# ==================================
+# VOLÚMENES
+# ==================================
 volumes:
   postgres_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  n8n_data:
+    driver: local
+
+# ==================================
+# REDES
+# ==================================
+networks:
+  default:
+    name: task-manager-network
+    driver: bridge
+
+
