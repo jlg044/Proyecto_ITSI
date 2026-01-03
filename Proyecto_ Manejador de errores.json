@@ -1,0 +1,155 @@
+{
+  "name": "Proyecto: Manejador de errores",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        -80
+      ],
+      "id": "fac58b85-e6a7-42a3-8635-28c8fdb4c0ed",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.GOOGLE_SHEET_NAME }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now }}",
+            "Workflow Fallido": "={{ $json.workflow.name }}",
+            "Mensaje de error": "={{ $json.execution.error.message }}",
+            "URL": "={{ $json.execution.url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Workflow Fallido",
+              "displayName": "Workflow Fallido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mensaje de error",
+              "displayName": "Mensaje de error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL",
+              "displayName": "URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -48,
+        -80
+      ],
+      "id": "be133e75-3340-4aba-b869-8237d77725c3",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8P8Uh3rhA1nnc3qI",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.GMAIL_EMAIL }}",
+        "subject": "Error en la creación del ticket",
+        "message": "=Hora del error: {{ $now }}<br>\nMensaje: {{ $json['Mensaje de error'] }}<br>\nURL: {{ $json.URL }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        176,
+        -80
+      ],
+      "id": "25b66866-21b2-4bd9-bbc8-194447fac854",
+      "name": "Send a message1",
+      "webhookId": "aa003c18-82d9-4933-b062-8d3eedec7631",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Oay8ab6AwtefXsso",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "12150377-4f7f-49b0-99a3-a254b9b6bd4a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b026413b36a9c60fd97fa1c5f6ff1734fa925ab3e62ee6db9e7b11ab9d5d541a"
+  },
+  "id": "BucAT7JEgWBdLH6q",
+  "tags": []
+}
