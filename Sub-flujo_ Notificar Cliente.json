@@ -1,0 +1,69 @@
+{
+  "name": "Sub-flujo: Notificar Cliente",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        -112
+      ],
+      "id": "3dd51426-6bd0-4529-82b9-babb26538611",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }} ",
+        "subject": "=Hemos recibido su ticket: '{{ $json.asunto }}'",
+        "message": "=¡Hola {{ $json.usuario }}! Hemos recibido su ticket: '{{ $json.asunto }}'. Estamos trabajando en ello. Pronto tendrá más noticias. Gracias.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -112
+      ],
+      "id": "d83e6ba7-6371-4418-bcfb-b19ecb985743",
+      "name": "Send a message",
+      "webhookId": "ceeca9f0-3f79-4e82-9672-53a44edb36aa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Oay8ab6AwtefXsso",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "BucAT7JEgWBdLH6q"
+  },
+  "versionId": "51decdcf-65f3-4216-8b9c-3fe36e3d9d6a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b026413b36a9c60fd97fa1c5f6ff1734fa925ab3e62ee6db9e7b11ab9d5d541a"
+  },
+  "id": "AoZcm6aV9HfMQcdz",
+  "tags": []
+}
