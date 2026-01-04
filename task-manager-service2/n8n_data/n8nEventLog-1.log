@@ -1,0 +1,2 @@
+{"__type":"$$EventMessageAudit","id":"9c6f4036-bfa8-4596-87b6-ca7815efe2d7","ts":"2026-01-04T15:08:46.409+00:00","eventName":"n8n.audit.user.login.success","message":"n8n.audit.user.login.success","payload":{"userId":"c0893dcd-7773-468a-b2ca-7ffc2e29c989","_email":"selu9029@gmail.com","_firstName":"JOSE","_lastName":"Lopez","globalRole":"global:owner","authenticationMethod":"email"}}
+{"__type":"$$EventMessageConfirm","confirm":"9c6f4036-bfa8-4596-87b6-ca7815efe2d7","ts":"2026-01-04T15:08:46.437+00:00","source":{"id":"0","name":"eventBus"}}
