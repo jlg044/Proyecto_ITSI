@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==================================
   # INFRAESTRUCTURA BASE
@@ -8,8 +6,7 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:14-alpine
-    container_name: task-manager-db2
-    restart: unless-stopped
+    container_name: task-manager-db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -19,36 +16,24 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-taskdb}
     ports:
       - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # RabbitMQ Message Broker
-  rabbitmq:
+  mq:
     image: rabbitmq:3-management-alpine
-    container_name: task-manager-rabbitmq
-    restart: unless-stopped
+    container_name: task-manager-mq
     ports:
-      - "5672:5672"      # AMQP port
-      - "15672:15672"    # Management UI
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-guest}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-guest}
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
   # N8N Workflow Automation
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n
     container_name: task-manager-n8n
-    restart: unless-stopped
     ports:
       - "${N8N_PORT:-5678}:5678"
     env_file:
@@ -56,18 +41,11 @@ services:
     environment:
       - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-false}
       - N8N_HOST=${N8N_HOST:-localhost}
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=db
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-taskdb}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER:-user}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-password}
       - WEBHOOK_TUNNEL_URL=http://localhost:${N8N_PORT:-5678}/
     volumes:
-      - ./n8n_data:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
     depends_on:
-      db:
-        condition: service_healthy
+      - mq
 
   # ==================================
   # APLICACIÓN
@@ -76,59 +54,52 @@ services:
   # API Web Service (Flask)
   web:
     build: ./web
-    container_name: task-manager-web2
-    restart: unless-stopped
+    container_name: task-manager-web
     ports:
       - "5001:5000"
     volumes:
       - ./web:/app
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-taskdb}
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
       - FLASK_ENV=${FLASK_ENV:-production}
       - FLASK_DEBUG=${FLASK_DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
     depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      - db
+      - mq
 
   # Worker Service (Async Consumer)
   worker:
     build: ./worker
-    container_name: task-manager-worker2
-    restart: unless-stopped
+    container_name: task-manager-worker
     volumes:
       - ./worker:/app
     environment:
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
+      - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
     depends_on:
-      - rabbitmq
-
+      - mq
   # Notifier Service
-  notifier:
-    build: ./notifier
-    container_name: task-manager-notifier2
-    restart: unless-stopped
-    environment:
-      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672/}
-      - WEBHOOK_URL=${WEBHOOK_URL:-}
-      - GMAIL_USER=${GMAIL_USER:-}
-      - GMAIL_PASSWORD=${GMAIL_PASSWORD:-}
-    depends_on:
-      - rabbitmq
+  # notifier:
+  #   build: ./notifier
+  #   container_name: task-manager-notifier
+  #   environment:
+  #     - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
+  #     - WEBHOOK_URL=${WEBHOOK_URL:-}
+  #     - GMAIL_USER=${GMAIL_USER:-}
+  #     - GMAIL_PASSWORD=${GMAIL_PASSWORD:-}
+  #   depends_on:
+  #     - mq
 
-# ==================================
-# VOLÚMENES
-# ==================================
+  # ==================================
+  # VOLÚMENES
+  # ==================================
 volumes:
   postgres_data:
     driver: local
   rabbitmq_data:
     driver: local
   n8n_data:
-    driver: local
+    external: true
 
 # ==================================
 # REDES
@@ -137,5 +108,3 @@ networks:
   default:
     name: task-manager-network
     driver: bridge
-
-

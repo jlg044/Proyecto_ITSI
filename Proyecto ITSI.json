@@ -297,8 +297,8 @@
       "name": "RabbitMQ1",
       "credentials": {
         "rabbitmq": {
-          "id": "pLFG0ktcjFVbHBt1",
-          "name": "RabbitMQ account"
+          "id": "6zKMx6cwWLCFVyFQ",
+          "name": "RabbitMQ account 2"
         }
       }
     },
@@ -319,8 +319,8 @@
       "name": "RabbitMQ2",
       "credentials": {
         "rabbitmq": {
-          "id": "pLFG0ktcjFVbHBt1",
-          "name": "RabbitMQ account"
+          "id": "6zKMx6cwWLCFVyFQ",
+          "name": "RabbitMQ account 2"
         }
       }
     },
@@ -341,8 +341,8 @@
       "name": "RabbitMQ3",
       "credentials": {
         "rabbitmq": {
-          "id": "pLFG0ktcjFVbHBt1",
-          "name": "RabbitMQ account"
+          "id": "6zKMx6cwWLCFVyFQ",
+          "name": "RabbitMQ account 2"
         }
       }
     },
@@ -901,14 +901,14 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false,
     "errorWorkflow": "BucAT7JEgWBdLH6q"
   },
-  "versionId": "e77a865e-a762-4e48-947b-75e3c90309fe",
+  "versionId": "48bad0d9-dd77-4e30-a74a-99e70b31ad30",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "b026413b36a9c60fd97fa1c5f6ff1734fa925ab3e62ee6db9e7b11ab9d5d541a"
