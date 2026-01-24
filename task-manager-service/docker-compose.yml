@@ -62,8 +62,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-taskdb}
       - RABBITMQ_URL=amqp://guest:guest@mq:5672/%2F
-      - FLASK_ENV=${FLASK_ENV:-production}
-      - FLASK_DEBUG=${FLASK_DEBUG:-False}
+      - FLASK_DEBUG=${FLASK_DEBUG:-True}
     depends_on:
       - db
       - mq
