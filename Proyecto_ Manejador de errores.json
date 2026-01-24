@@ -17,7 +17,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.GOOGLE_SHEET_ID }}",
+          "value": "={{ $env.GOOGLE_SHEETS_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -145,7 +145,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "12150377-4f7f-49b0-99a3-a254b9b6bd4a",
+  "versionId": "a012cfd1-fd34-41bb-ad67-a49c6cfc89bc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "b026413b36a9c60fd97fa1c5f6ff1734fa925ab3e62ee6db9e7b11ab9d5d541a"
