@@ -107,3 +107,7 @@ Accede al panel de RabbitMQ: [http://localhost:15672](http://localhost:15672) (u
 
 ## Autores
 - Proyecto desarrollado como parte del curso ITSI.
+- Juan Carlos Díaz González
+- Isabel Pelaya Galindo Ibáñez
+- Esther Ibáñez Mingorance
+- José Luis López García
