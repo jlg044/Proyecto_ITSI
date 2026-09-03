@@ -9,3 +9,7 @@ env/
 .venv
 # Docker
 .dockerignore
+
+# n8n runtime data (contiene encryptionKey y credenciales cifradas, nunca commitear)
+task-manager-service/.n8n_data/
+task-manager-service/n8n_data/
